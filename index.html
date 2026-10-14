@@ -6,9 +6,9 @@
 <title>卡通蛋糕 · Three.js</title>
 <style>
   :root{
-    --ink:#5a4450;
-    --card:rgba(255,255,255,.74);
-    --line:rgba(90,68,80,.14);
+    --ink:#f3e9f0;
+    --card:rgba(52,38,60,.66);
+    --line:rgba(255,255,255,.15);
     --pink:#ff7fb0;
   }
   *{ box-sizing:border-box; }
@@ -17,8 +17,8 @@
     font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;
     color:var(--ink);
     background:
-      radial-gradient(1200px 700px at 50% 12%, #ffffff 0%, rgba(255,255,255,0) 62%),
-      linear-gradient(170deg,#fff7fb 0%,#faf6ff 48%,#f2faff 100%);
+      radial-gradient(1200px 700px at 50% 12%, #6e4a78 0%, rgba(110,74,120,0) 62%),
+      linear-gradient(170deg,#4d3560 0%,#43304f 48%,#392a47 100%);
     overflow:hidden;
   }
   #scene{ display:block; width:100vw; height:100vh; }
@@ -31,7 +31,7 @@
     border:1px solid var(--line);
     border-radius:20px;
     padding:15px 17px 13px;
-    box-shadow:0 12px 34px rgba(130,95,120,.15);
+    box-shadow:0 12px 34px rgba(0,0,0,.45);
     max-width:min(92vw,330px);
   }
   .panel h1{ margin:0 0 2px; font-size:16px; letter-spacing:.5px; font-weight:800; }
@@ -39,28 +39,28 @@
   .row{ display:flex; flex-wrap:wrap; gap:8px; }
   button{
     font:inherit; font-size:12.5px; font-weight:600;
-    color:var(--ink); background:#fff;
+    color:var(--ink); background:rgba(255,255,255,.07);
     border:1px solid var(--line);
     border-radius:12px; padding:7px 12px; cursor:pointer;
     transition:transform .12s ease, box-shadow .18s ease, background .18s ease;
     user-select:none;
   }
-  button:hover{ transform:translateY(-1px); box-shadow:0 6px 15px rgba(130,95,120,.16); }
+  button:hover{ transform:translateY(-1px); box-shadow:0 6px 15px rgba(0,0,0,.4); background:rgba(255,255,255,.13); }
   button:active{ transform:translateY(0); }
-  button.on{ background:linear-gradient(135deg,#ffd6e7,#ffc4da); border-color:#ffb2ce; }
-  .tag{ margin-top:11px; font-size:11.5px; opacity:.6; }
+  button.on{ background:linear-gradient(135deg,#ffd6e7,#ffc4da); border-color:#ffb2ce; color:#5a4450; }
+  .tag{ margin-top:11px; font-size:11.5px; opacity:.72; }
   .hint{
     position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:5;
-    font-size:12px; opacity:.5; background:var(--card);
+    font-size:12px; opacity:.68; background:var(--card);
     padding:6px 14px; border-radius:20px; border:1px solid var(--line); white-space:nowrap;
   }
   #loading{
     position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;
-    flex-direction:column; gap:10px; font-size:14px; background:rgba(255,255,255,.6);
+    flex-direction:column; gap:10px; font-size:14px; background:rgba(40,28,48,.62);
     backdrop-filter:blur(5px); text-align:center; padding:24px; line-height:1.7;
   }
   #loading.hide{ display:none; }
-  #loading code{ background:#fff; padding:2px 6px; border-radius:6px; border:1px solid var(--line); }
+  #loading code{ background:rgba(255,255,255,.1); padding:2px 6px; border-radius:6px; border:1px solid var(--line); }
   .spinner{
     width:26px; height:26px; border-radius:50%;
     border:3px solid rgba(255,127,176,.25); border-top-color:var(--pink);
@@ -147,7 +147,7 @@ renderer.toneMapping = THREE.NoToneMapping;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
 
-/* 4 段柔和卡通梯度（暗部不低于 0.38，避免脏灰阴影） */
+/* 4 段柔和卡通梯度（暗部不低于 0.71，暗背景下蛋糕也能提亮、不显脏） */
 function makeGradientMap(values) {
   const data = Uint8Array.from(values);
   const tex = new THREE.DataTexture(data, values.length, 1, THREE.RedFormat);
@@ -157,7 +157,7 @@ function makeGradientMap(values) {
   tex.needsUpdate = true;
   return tex;
 }
-const GRADIENT = makeGradientMap([158, 202, 236, 255]);
+const GRADIENT = makeGradientMap([180, 212, 242, 255]);
 const OUTLINE_MAT = new THREE.MeshBasicMaterial({ color: 0x8f7580, side: THREE.BackSide });
 
 function toon(color) { return new THREE.MeshToonMaterial({ color, gradientMap: GRADIENT }); }
@@ -266,11 +266,11 @@ const MAT = {
 const sprinkleMats = [0, 1, 2, 3].map(i => toon(T().sprinkles[i]));
 
 /* ============================== 灯光 ============================== */
-/* 环境光只做"补一点底"，亮度交给主光：环境光过高会洗白、吃掉明暗层次 */
-scene.add(new THREE.AmbientLight(0xffffff, 0.26));
-scene.add(new THREE.HemisphereLight(0xffffff, 0xfff4f7, 0.28));
+/* 暗色背景下整体提亮：环境光补底、主光/补光加强，明暗层次仍由梯度贴图分档 */
+scene.add(new THREE.AmbientLight(0xffffff, 0.52));
+scene.add(new THREE.HemisphereLight(0xffffff, 0xe8dce6, 0.42));
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.55);
 keyLight.position.set(6, 9.5, 6);
 keyLight.castShadow = true;
 keyLight.shadow.mapSize.set(2048, 2048);
@@ -284,11 +284,11 @@ keyLight.shadow.bias = -0.0012;
 keyLight.shadow.normalBias = 0.022;
 scene.add(keyLight);
 
-const fillLight = new THREE.DirectionalLight(0xfff4f6, 0.34);
+const fillLight = new THREE.DirectionalLight(0xfff4f6, 0.5);
 fillLight.position.set(-7, 4, -5);
 scene.add(fillLight);
 
-const ground = new THREE.Mesh(new THREE.CircleGeometry(16, 64), new THREE.ShadowMaterial({ opacity: 0.09 }));
+const ground = new THREE.Mesh(new THREE.CircleGeometry(16, 64), new THREE.ShadowMaterial({ opacity: 0.18 }));
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
